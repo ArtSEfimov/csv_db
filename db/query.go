@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"bytes"
@@ -8,9 +8,17 @@ import (
 	"strings"
 )
 
-func validateQuery(query string) (bool, string) {
+const (
+	CREATE = "CREATE_TABLE"
+	SELECT = "SELECT"
+	INSERT = "INSERT"
+	UPDATE = "UPDATE"
+	DELETE = "DELETE"
+)
 
-	pythonScript := exec.Command("python", "main_validator.py", query)
+func ValidateQuery(query string) (bool, string) {
+
+	pythonScript := exec.Command("python", "./validators/main_validator.py", query)
 
 	var stdout bytes.Buffer
 	pythonScript.Stdout = &stdout
@@ -33,7 +41,7 @@ func validateQuery(query string) (bool, string) {
 
 }
 
-func parseQuery(query string) (string, string, []string) {
+func ParseQuery(query string) (string, string, []string) {
 	// Разбирает запрос на части: тип операции, имя таблицы, аргументы.
 	// Возвращает тип операции (CREATE_TABLE, SELECT, INSERT и т.д.), имя таблицы и список аргументов.
 
@@ -48,57 +56,57 @@ func parseQuery(query string) (string, string, []string) {
 
 }
 
-func handleQuery(requestType string, table string, arguments []string) (bool, string) {
+func HandleQuery(requestType string, table string, arguments []string) (string, bool) {
 	// Выполняет запрос, переданный пользователем.
 	// В зависимости от типа операции вызывает соответствующую функцию из db.go.
 	// Возвращает true и результат операции, либо false и сообщение об ошибке.
 	switch strings.ToUpper(requestType) {
-	case "CREATE_TABLE":
+	case CREATE:
 		ok := createTable(table, arguments)
 		if ok {
-			return true, fmt.Sprintf("Table %s created successfully", table)
+			return fmt.Sprintf("Table %s created successfully", table), true
 		}
-		return false, fmt.Sprint("Creat table failed")
-	case "SELECT":
+		return fmt.Sprint("Creat table failed"), false
+	case SELECT:
 		argument := arguments[0]
 		if argument == "*" {
 			result, ok := selectAll(table)
 			if ok {
-				return true, result
+				return result, true
 			}
-			return false, fmt.Sprint("Select all records failed")
+			return fmt.Sprint("Select all records failed"), false
 		}
 
 		result, ok := selectRecord(table, argument)
 		if ok {
-			return true, result
+			return result, true
 		}
-		return false, fmt.Sprintf("Select record with ID %s failed", argument)
+		return fmt.Sprintf("Select record with ID %s failed", argument), false
 
-	case "INSERT":
+	case INSERT:
 		ok := insertRecord(table, arguments)
 		if ok {
-			return true, fmt.Sprintf("New record inserted successfully")
+			return fmt.Sprintf("New record inserted successfully"), true
 		}
-		return false, fmt.Sprint("Insert record failed")
+		return fmt.Sprint("Insert record failed"), false
 
-	case "UPDATE":
+	case UPDATE:
 		id := arguments[0]
 		arguments = arguments[1:]
 		ok := updateRecord(table, id, arguments)
 		if ok {
-			return true, fmt.Sprintf("Update record with ID %s successfully", id)
+			return fmt.Sprintf("Update record with ID %s successfully", id), true
 		}
-		return false, fmt.Sprint("Update record failed")
+		return fmt.Sprint("Update record failed"), false
 
-	case "DELETE":
+	case DELETE:
 		id := arguments[0]
 		ok := deleteRecord(table, id)
 		if ok {
-			return true, fmt.Sprintf("Delete record with ID %s successfully", id)
+			return fmt.Sprintf("Delete record with ID %s successfully", id), true
 		}
-		return false, fmt.Sprint("Delete record failed")
+		return fmt.Sprint("Delete record failed"), false
 	}
 
-	return false, ""
+	return "", false
 }

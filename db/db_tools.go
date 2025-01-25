@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"encoding/csv"
@@ -7,15 +7,15 @@ import (
 	"strings"
 )
 
-func checkExtension(filename string) string {
+func addExtension(filename string) string {
 	if strings.HasSuffix(filename, ".csv") {
 		return filename
 	}
 	return fmt.Sprint(filename, ".csv")
 }
 
-func writeAllRecords(tableName string, data *[][]string) error {
-	tableName = checkExtension(tableName)
+func writeAllRecords(tableName string, data [][]string) error {
+	tableName = addExtension(tableName)
 
 	dbFile, openErr := os.Create(tableName)
 	defer dbFile.Close()
@@ -26,7 +26,7 @@ func writeAllRecords(tableName string, data *[][]string) error {
 	writer := csv.NewWriter(dbFile)
 	writer.Comma = '|'
 
-	writeErr := writer.WriteAll(*data)
+	writeErr := writer.WriteAll(data)
 	if writeErr != nil {
 		return fmt.Errorf("write error: %w", writeErr)
 	}
@@ -34,8 +34,8 @@ func writeAllRecords(tableName string, data *[][]string) error {
 	return nil
 }
 
-func readAllRecords(tableName string) (*[][]string, error) {
-	tableName = checkExtension(tableName)
+func readAllRecords(tableName string) ([][]string, error) {
+	tableName = addExtension(tableName)
 
 	dbFile, openErr := os.Open(tableName)
 	defer dbFile.Close()
@@ -51,5 +51,5 @@ func readAllRecords(tableName string) (*[][]string, error) {
 	if readErr != nil {
 		return nil, fmt.Errorf("reading error: %w", readErr)
 	}
-	return &allRecords, nil
+	return allRecords, nil
 }

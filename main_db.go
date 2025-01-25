@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/ArtSEfimov/csv_db/db"
 	"os"
 )
 
@@ -14,13 +15,13 @@ func main() {
 	for {
 		scanner.Scan()
 		userQuery = scanner.Text()
-		ok, validateErr := validateQuery(userQuery)
+		ok, validateErr := db.ValidateQuery(userQuery)
 		if !ok {
 			fmt.Println(validateErr)
 			return
 		}
 
-		ok, result := handleQuery(parseQuery(userQuery))
+		result, ok := db.HandleQuery(db.ParseQuery(userQuery))
 		if !ok {
 			fmt.Println(fmt.Sprintf("Error: %s", result))
 			return

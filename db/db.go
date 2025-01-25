@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"encoding/csv"
@@ -31,7 +31,7 @@ func createTable(tableName string, fieldNames []string) bool {
 	  Возвращает true, если операция успешна, иначе false.*/
 	IDStorage[tableName] = 0
 
-	tableName = checkExtension(tableName)
+	tableName = addExtension(tableName)
 
 	dbFile, createErr := os.Create(tableName)
 	defer dbFile.Close()
@@ -64,7 +64,7 @@ func insertRecord(tableName string, fieldValues []string) bool {
 
 	fieldValues = append([]string{fmt.Sprintf("%d", newID)}, fieldValues...)
 
-	tableName = checkExtension(tableName)
+	tableName = addExtension(tableName)
 
 	dbFile, openErr := os.OpenFile(tableName, os.O_APPEND, 0744)
 	defer dbFile.Close()
@@ -96,9 +96,9 @@ func updateRecord(tableName string, id string, fieldValues []string) bool {
 		return false
 	}
 
-	for i, record := range *allRecords {
+	for i, record := range allRecords {
 		if record[0] == id {
-			(*allRecords)[i] = append([]string{id}, fieldValues...)
+			allRecords[i] = append([]string{id}, fieldValues...)
 			writeErr := writeAllRecords(tableName, allRecords)
 			if writeErr != nil {
 				return false
@@ -120,7 +120,7 @@ func selectAll(tableName string) (string, bool) {
 	}
 
 	allRecordsBuilder := strings.Builder{}
-	for _, record := range *allRecords {
+	for _, record := range allRecords {
 		allRecordsBuilder.WriteString(strings.Join(record, " "))
 		allRecordsBuilder.WriteRune('\n')
 	}
@@ -130,7 +130,7 @@ func selectAll(tableName string) (string, bool) {
 func selectRecord(tableName string, id string) (string, bool) {
 	// Возвращает запись таблицы по её ID.
 	// Возвращает строку с записью и true, либо пустую строку и false в случае ошибки.
-	tableName = checkExtension(tableName)
+	tableName = addExtension(tableName)
 
 	dbFile, openErr := os.Open(tableName)
 	defer dbFile.Close()
@@ -165,9 +165,9 @@ func deleteRecord(tableName string, id string) bool {
 		return false
 	}
 
-	for i, record := range *allRecords {
+	for i, record := range allRecords {
 		if record[0] == id {
-			*allRecords = append((*allRecords)[:i], (*allRecords)[i+1:]...)
+			allRecords = append(allRecords[:i], allRecords[i+1:]...)
 			writeErr := writeAllRecords(tableName, allRecords)
 			if writeErr != nil {
 				return false
